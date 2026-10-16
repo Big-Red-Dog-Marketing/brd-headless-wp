@@ -1,0 +1,41 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Lint PHP
+        run: find plugin theme -name '*.php' -not -path '*/vendor/*' -print0 | xargs -0 -n1 php -l
+
+      - name: Check versions
+        run: |
+          plugin=$(sed -n 's/^ \* Version: //p' plugin/brd-headless/brd-headless.php)
+          constant=$(sed -n "s/^const BRD_HEADLESS_VERSION = '\(.*\)';/\1/p" plugin/brd-headless/brd-headless.php)
+          theme=$(sed -n 's/^Version: //p' theme/brd-headless-theme/style.css)
+          echo "plugin=$plugin constant=$constant theme=$theme"
+          test "$plugin" = "$constant" && test "$plugin" = "$theme"
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then test "v$plugin" = "$GITHUB_REF_NAME"; fi
+
+      - name: Build zips
+        run: |
+          (cd plugin && zip -qr ../brd-headless.zip brd-headless)
+          (cd theme && zip -qr ../brd-headless-theme.zip brd-headless-theme)
+
+      - name: Publish release
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          notes=$(awk -v v="## ${GITHUB_REF_NAME#v} " 'index($0, v) == 1 {f=1; next} /^## /{f=0} f' CHANGELOG.md)
+          gh release create "$GITHUB_REF_NAME" brd-headless.zip brd-headless-theme.zip --title "$GITHUB_REF_NAME" --notes "$notes"
