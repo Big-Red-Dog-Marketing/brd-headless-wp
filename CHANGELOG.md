@@ -3,6 +3,7 @@
 ## 1.0.1 (2026-10-16)
 
 - Theme: Big Red Dog logo as the theme screenshot.
+- Releases publish on a push to `main` whose version has no release yet (no tag push needed).
 
 ## 1.0.0 (2026-10-16)
 

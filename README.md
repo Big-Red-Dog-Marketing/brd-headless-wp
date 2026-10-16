@@ -52,4 +52,4 @@ Library: [Plugin Update Checker](https://github.com/YahnisElsts/plugin-update-ch
 
 1. Bump the version in three places: `Version:` and `BRD_HEADLESS_VERSION` in `plugin/brd-headless/brd-headless.php`, and `Version:` in `theme/brd-headless-theme/style.css`. Plugin and theme always share a version.
 2. Add a `CHANGELOG.md` entry.
-3. Push to `main`, then push a tag `vX.Y.Z`. The release workflow checks the versions match the tag, lints the PHP, builds both zips and publishes the release. Sites pick it up within 12 hours (or click "Check for updates" on the Plugins screen).
+3. Push to `main`. The release workflow lints the PHP, checks the three versions match and have a CHANGELOG entry, builds both zips and, if that version has no release yet, publishes release `vX.Y.Z`. Sites pick it up within 12 hours (or click "Check for updates" on the Plugins screen).
