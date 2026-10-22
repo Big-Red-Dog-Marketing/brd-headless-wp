@@ -5,7 +5,7 @@ The shared WordPress side of BRD's headless sites: WordPress holds the content, 
 | | What it is |
 |---|---|
 | `plugin/brd-headless/` | **BRD Headless** plugin. Redirects every front-end request to the public site, keeps the CMS out of search engines, hardens the install, and rebuilds the public site when content changes. Updates itself (and the theme) from this repo's releases. |
-| `theme/brd-headless-theme/` | **BRD Headless** theme. WordPress needs one active theme; this one is three files, turns on featured images and renders previews. |
+| `theme/brd-headless-theme/` | **BRD Headless** theme. WordPress needs one active theme; this one turns on featured images, renders previews, and its `theme.json` locks custom colors, fonts and spacing so the site's design tokens own them. |
 | `docs/setup.md` | Checklist for a new site, from hosting to launch. |
 | `docs/hardening.md` | What the plugin hardens, what's left to the host and the site owner, and the sources behind it. |
 
@@ -16,6 +16,7 @@ Each site keeps its own content model (custom post types, taxonomies, ACF field 
 - **Headless:** front-end URLs 301 to the same path on the public site (previews still render here). REST, admin, cron and `robots.txt` stay on the CMS. "View" links in the editor point at the public site; a site whose paths differ filters `brd_headless_view_url`.
 - **Never indexed:** `X-Robots-Tag: noindex, nofollow, noimageindex` on pages, REST and every static file, `robots.txt` disallows everything, no sitemaps, no attachment pages.
 - **Hardened** (details in `docs/hardening.md`): no unfiltered HTML for anyone, no dashboard file editing, no anonymous user list, `?author=` can't reveal a login, XML-RPC off and blocked, `readme.html`/`license.txt` blocked, no PHP from uploads, security headers on every response, no version number, comments/emojis/oEmbed off, core updates don't add new default themes.
+- **Editor limits:** editors can insert only the blocks the public site renders (paragraph, h2-h3 headings, lists, images, quotes, separators, tables), with no code editor or block locking, and uploads are scaled to a 2880px long edge. Filters `brd_headless_allowed_blocks`, `brd_headless_heading_levels` and `brd_headless_max_image_edge` adjust them per site.
 - **Rebuilds:** publishing, updating, unpublishing or trashing content, changing terms, or reordering with Post Types Order queues one rebuild 5 minutes after the last change. "Rebuild site now" in the admin bar builds immediately.
 
 ### Settings
@@ -38,13 +39,7 @@ Until the public URL is set, nothing is redirected and the dashboard shows a war
 
 ## Updates
 
-The plugin checks this repo's latest GitHub release (assets `brd-headless.zip` and `brd-headless-theme.zip`) and offers updates on the normal Plugins and Themes screens, so auto-updates work too. While the repo is private, each site needs a read-only token in `wp-config.php`:
-
-```php
-define('BRD_HEADLESS_GITHUB_TOKEN', 'github_pat_...');
-```
-
-Make it a fine-grained token with access to this repository only and **Contents: Read-only**. If the repo is made public, the token isn't needed.
+The plugin checks this repo's latest GitHub release (assets `brd-headless.zip` and `brd-headless-theme.zip`) and offers updates on the normal Plugins and Themes screens, so auto-updates work too. The repo is public, so sites need no token. (If it's ever made private, each site needs a fine-grained read-only token for this repo in `wp-config.php`: `define('BRD_HEADLESS_GITHUB_TOKEN', 'github_pat_...');`.)
 
 Library: [Plugin Update Checker](https://github.com/YahnisElsts/plugin-update-checker) 5.7 (MIT), vendored in `plugin/brd-headless/vendor/`.
 
