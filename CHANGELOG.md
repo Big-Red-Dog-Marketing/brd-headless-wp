@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.0 (2026-10-22)
+
+- Plugin: editor limits so content stays inside what the public site renders: allowed blocks (paragraph, h2-h3 headings, lists, images, quotes, separators, tables; filter `brd_headless_allowed_blocks`), no code editor or block locking, heading levels (filter `brd_headless_heading_levels`), uploads scaled to a 2880px long edge (filter `brd_headless_max_image_edge`). Moved from the astro-starter's separate editor-constraints file.
+- Theme: `theme.json` locks custom colors, gradients, font sizes and families, spacing, borders and shadows; the site's design tokens own those.
+- Docs: WP-Cron runs from the host's server cron (every 5 minutes) plus a nightly deploy-hook call, instead of a Cloudflare Worker cron.
+
 ## 1.0.1 (2026-10-16)
 
 - Theme: Big Red Dog logo as the theme screenshot.

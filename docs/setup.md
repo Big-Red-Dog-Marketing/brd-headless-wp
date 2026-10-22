@@ -27,10 +27,15 @@ From an empty host to a CMS the public site builds from. Nan's Dance (`nans-danc
 
 - **Content:** the build reads public REST only (`/wp-json/wp/v2/...`), no credentials. Reference: `src/lib/wp-client.mjs` and `src/lib/wp-loader.ts` in `nans-dance`.
 - **Rebuilds:** create a Deploy Hook for the production branch (Cloudflare: in the Worker's Builds settings), paste it into Settings > Reading > Site rebuild hook, and store it as a `DEPLOY_HOOK_URL` secret for the nightly build.
-- **WP-Cron:** the 5-minute rebuild timer and scheduled posts run on WP-Cron, which only fires on traffic, and a headless CMS gets almost none. Have the site Worker request `https://wp.example.com/wp-cron.php` every 15 minutes (Cron Trigger `*/15 * * * *`), plus a daily `0 7 * * *` call to the Deploy Hook. Reference: `wrangler.jsonc` and `src/worker/index.ts` (`scheduled`) in `nans-dance`.
+- **WP-Cron:** the 5-minute rebuild timer and scheduled posts run on WP-Cron, which only fires on traffic, and a headless CMS gets almost none. Run it from the host's server cron instead (Tigertech documents this): add `define('DISABLE_WP_CRON', true);` to `wp-config.php`, then two cron jobs in the host panel:
+  ```
+  */5 * * * *  cd <the install's directory> && /usr/local/bin/wp cron event run --due-now >/dev/null 2>&1
+  5 0 * * *    curl -fsS -X POST "<Deploy Hook URL>" >/dev/null 2>&1
+  ```
+  The first fires queued rebuilds and scheduled posts within 5 minutes; the second rebuilds once a night so date-based content rolls over. No Cloudflare cron is needed (the Workers free plan allows 5 cron triggers per account).
 
 ## 4. Before launch
 
-- **Login wall:** if the domain's DNS is on Cloudflare, proxy `wp.` and add a Zero Trust Access application on `wp-login.php` and `/wp-admin/` (free up to 50 users, email one-time PIN). Leave `/wp-json/` and `/wp-cron.php` open; the build and the Worker need them. Turn on Cloudflare's free managed WAF rules. If DNS stays with the host, ask what brute-force protection the host applies to `wp-login.php`, and add Wordfence (free) if the answer is "none".
+- **Login wall:** if the domain's DNS is on Cloudflare, proxy `wp.` and add a Zero Trust Access application on `wp-login.php` and `/wp-admin/` (free up to 50 users, email one-time PIN). Leave `/wp-json/` open; the build needs it. Turn on Cloudflare's free managed WAF rules. If DNS stays with the host, ask what brute-force protection the host applies to `wp-login.php`, and add Wordfence (free) if the answer is "none".
 - **Backups:** daily, off the server, several kept; test one restore. After launch WordPress is the only copy of the content.
 - **Checks** (logged out): `/wp-json/wp/v2/users` returns 404; `/xmlrpc.php`, `/readme.html` and a `.php` URL under `/wp-content/uploads/` return 403; `/?author=1` goes to the public site; the content endpoints the build uses return 200; `/robots.txt` disallows everything.
