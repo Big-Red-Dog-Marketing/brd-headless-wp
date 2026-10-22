@@ -39,13 +39,7 @@ Until the public URL is set, nothing is redirected and the dashboard shows a war
 
 ## Updates
 
-The plugin checks this repo's latest GitHub release (assets `brd-headless.zip` and `brd-headless-theme.zip`) and offers updates on the normal Plugins and Themes screens, so auto-updates work too. While the repo is private, each site needs a read-only token in `wp-config.php`:
-
-```php
-define('BRD_HEADLESS_GITHUB_TOKEN', 'github_pat_...');
-```
-
-Make it a fine-grained token with access to this repository only and **Contents: Read-only**. If the repo is made public, the token isn't needed.
+The plugin checks this repo's latest GitHub release (assets `brd-headless.zip` and `brd-headless-theme.zip`) and offers updates on the normal Plugins and Themes screens, so auto-updates work too. The repo is public, so sites need no token. (If it's ever made private, each site needs a fine-grained read-only token for this repo in `wp-config.php`: `define('BRD_HEADLESS_GITHUB_TOKEN', 'github_pat_...');`.)
 
 Library: [Plugin Update Checker](https://github.com/YahnisElsts/plugin-update-checker) 5.7 (MIT), vendored in `plugin/brd-headless/vendor/`.
 
