@@ -27,12 +27,19 @@ From an empty host to a CMS the public site builds from. Nan's Dance (`nans-danc
 
 - **Content:** the build reads public REST only (`/wp-json/wp/v2/...`), no credentials. Reference: `src/lib/wp-client.mjs` and `src/lib/wp-loader.ts` in `nans-dance`.
 - **Rebuilds:** create a Deploy Hook for the production branch (Cloudflare: in the Worker's Builds settings), paste it into Settings > Reading > Site rebuild hook, and store it as a `DEPLOY_HOOK_URL` secret for the nightly build.
-- **WP-Cron:** the 5-minute rebuild timer and scheduled posts run on WP-Cron, which only fires on traffic, and a headless CMS gets almost none. Run it from the host's server cron instead (Tigertech documents this): add `define('DISABLE_WP_CRON', true);` to `wp-config.php`, then two cron jobs in the host panel:
-  ```
-  */5 * * * *  cd <the install's directory> && /usr/local/bin/wp cron event run --due-now >/dev/null 2>&1
-  5 0 * * *    curl -fsS -X POST "<Deploy Hook URL>" >/dev/null 2>&1
-  ```
-  The first fires queued rebuilds and scheduled posts within 5 minutes; the second rebuilds once a night so date-based content rolls over. No Cloudflare cron is needed (the Workers free plan allows 5 cron triggers per account).
+- **WP-Cron (server cron every 5 minutes):** saves don't build straight away. Each publish, edit, reorder or term change queues one rebuild 5 minutes out (the next change restarts the timer), and the queued rebuild, like scheduled posts, is a WP-Cron event. WP-Cron only runs when someone loads the CMS, and a headless install gets almost no traffic, so run it from the host's server cron every 5 minutes ([Tigertech's WordPress cron setup](https://support.tigertech.net/wordpress-cron)). The interval is how long a publish waits to start building, not how often the site builds: a run with nothing due does nothing, so the site builds once per editing session plus once a night. On Tigertech, once per site over SSH:
+  1. Get the login from [support.tigertech.net/shell](https://support.tigertech.net/shell) (enter the domain in the yellow box): the exact `ssh` command and which password (the hosting account's, not a WordPress login). The first connection shows the server's key fingerprint; type `yes`.
+  2. Check: `ls ~/html/wp-config.php` (WordPress's directory; adjust every line below if it's elsewhere), `cd ~/html && /usr/local/bin/wp cron event list`, `which curl`, and `time /usr/local/bin/wp cron event run --due-now`, whose `user` + `sys` must be well under 5 seconds (Tigertech allows one CPU second per minute of interval).
+  3. `crontab -e` (nano), add these at the bottom, one line each, then Ctrl+O, Enter, Ctrl+X:
+     ```
+     */5 * * * *  cd ~/html && /usr/local/bin/wp cron event run --due-now > /dev/null
+     5 0 * * *    curl -fsS -X POST "<Deploy Hook URL>" > /dev/null
+     ```
+     Normal output is discarded; errors are emailed to the account's admin contact. Without curl, use `/usr/bin/wget -q -O /dev/null --post-data='' "<Deploy Hook URL>"`.
+  4. Then add `define('DISABLE_WP_CRON', true);` to `wp-config.php`, above "That's all, stop editing!", so WordPress stops also running cron on page loads.
+  5. Test: publish a post (the admin bar shows "Rebuild site now (queued, 5 min)") and see a build start within about 10 minutes; schedule a post a few minutes out, log out, and see it go live.
+
+  The nightly line rebuilds just after midnight so date-based content rolls over. "Rebuild site now" builds at once without cron, and is how media library, menu and settings changes (which queue nothing) reach the site before the nightly build. No Cloudflare cron is needed.
 
 ## 4. Before launch
 
