@@ -4,8 +4,9 @@
  *
  * Saves don't call the hook straight away: each one restarts a 5-minute timer,
  * so an editing session ends in one build. "Rebuild site now" in the admin bar
- * builds now. The timer and scheduled posts run on WP-Cron, so the host or the
- * front end should request /wp-cron.php regularly (docs/setup.md).
+ * builds now. The timer and scheduled posts run on WP-Cron, so the host's
+ * server cron runs it every 5 minutes (docs/setup.md); a run with nothing due
+ * does nothing, so that adds no builds.
  */
 
 if (!defined('ABSPATH')) {
